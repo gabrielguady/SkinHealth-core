@@ -1,0 +1,66 @@
+services:
+  web:
+    build: .
+    image: api-skin
+    ports:
+      - "8000:8000"
+    environment:
+      DB_ENGINE: django.db.backends.postgresql_psycopg2
+      DB_HOST: db-skin
+      DB_PORT: 5432
+      DB_NAME: skin
+      DB_USER: postgres
+      DB_PASSWORD: fpf2025
+    depends_on:
+      - db-skin
+
+  db-skin:
+    image: postgres:17
+    hostname: skin
+    ports:
+      - "5433:5432"
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=skin
+      - POSTGRES_PASSWORD=fpf2025
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  pgadmin-api-core:
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "user@gmail.com"
+      PGADMIN_DEFAULT_PASSWORD: "admin"
+    ports:
+      - "14549:80"
+    depends_on:
+      - skin
+    networks:
+      - app-network
+
+  minio-api:
+    hostname: minio-skin
+    image: 'minio/minio:latest'
+    container_name: minio
+    restart: always
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio-data-skin:/data
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    command: server /data --console-address ":9001"
+
+volumes:
+  db-data: {}
+  minio-data-skin: {}
+
+networks:
+  app-network:
+    driver: bridge
