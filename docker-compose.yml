@@ -16,7 +16,7 @@ services:
 
   db-skin:
     image: postgres:17
-    hostname: skin
+    hostname: db_skin
     ports:
       - "5433:5432"
     restart: always
