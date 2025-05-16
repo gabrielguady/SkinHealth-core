@@ -42,7 +42,7 @@ services:
     image: minio/minio:latest
     ports:
       - "9000:9000"
-      - "9001:9001"
+      - "9002:9001"  # Modifique de 9001 para 9002
     environment:
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: admin
