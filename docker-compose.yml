@@ -6,7 +6,7 @@ services:
       - "8000:8000"
     environment:
       DB_ENGINE: django.db.backends.postgresql_psycopg2
-      DB_HOST: skin
+      DB_HOST: db-skin
       DB_PORT: 5432
       DB_NAME: skin
       DB_USER: postgres
