@@ -37,8 +37,6 @@ services:
       PGADMIN_DEFAULT_PASSWORD: "admin"
     ports:
       - "14549:80"
-    depends_on:
-      - skin
     networks:
       - app-network
 
