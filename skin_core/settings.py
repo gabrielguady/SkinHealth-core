@@ -84,7 +84,7 @@ DATABASES = {
         'NAME': 'skin',
         'USER': 'postgres',
         'PASSWORD': 'fpf2025',
-        'HOST': 'db_skin',
+        'HOST': 'skin',
         'PORT': '5432',
     },
 }
