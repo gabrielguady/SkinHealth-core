@@ -15,15 +15,3 @@ class ConsultationSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Consultation
         fields = '__all__'
-
-class VisualInspectionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.VisualInspection
-        fields = '__all__'
-
-class AnalysisResultSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.AnalysisResult
-        fields = '__all__'
-
-
