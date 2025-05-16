@@ -11,6 +11,8 @@ services:
       DB_NAME: skin
       DB_USER: postgres
       DB_PASSWORD: fpf2025
+    depends_on:
+      - db-skin
 
   db-skin:
     image: postgres:17
