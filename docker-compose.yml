@@ -1,4 +1,15 @@
+version: '3.8'
+
 services:
+  db-skin:
+    image: postgres:17
+    environment:
+      POSTGRES_PASSWORD: fpf2025
+    ports:
+      - "5433:5432"
+    networks:
+      - app-network
+
   web:
     build: .
     image: api-skin
@@ -13,19 +24,6 @@ services:
       DB_PASSWORD: fpf2025
     depends_on:
       - db-skin
-
-  db-skin:
-    image: postgres:17
-    hostname: skin
-    ports:
-      - "5433:5432"
-    restart: always
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=skin
-      - POSTGRES_PASSWORD=fpf2025
-    volumes:
-      - db-data:/var/lib/postgresql/data
     networks:
       - app-network
 
@@ -40,24 +38,17 @@ services:
     networks:
       - app-network
 
-  minio-api:
-    hostname: minio-skin
-    image: 'minio/minio:latest'
-    container_name: minio
-    restart: always
+  minio:
+    image: minio/minio:latest
     ports:
-      - '9000:9000'
-      - '9001:9001'
-    volumes:
-      - minio-data-skin:/data
+      - "9000:9000"
+      - "9001:9001"
     environment:
-      MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: minio123
-    command: server /data --console-address ":9001"
-
-volumes:
-  db-data: {}
-  minio-data-skin: {}
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: admin
+    command: server /data
+    networks:
+      - app-network
 
 networks:
   app-network:
