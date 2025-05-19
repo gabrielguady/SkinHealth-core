@@ -4,9 +4,10 @@ from core import viewsets
 
 router = routers.DefaultRouter()
 
-router.register(r'user', viewsets.UserViewSet)
-router.register(r'patient', viewsets.PatientViewSet)
-router.register(r'consultation', viewsets.ConsultationViewSet)
-router.register(r'result', viewsets.ResultViewSet)
+router.register('user', viewsets.UserViewSet)
+router.register('patient', viewsets.PatientViewSet)
+router.register('consultation', viewsets.ConsultationViewSet)
+router.register('result', viewsets.ResultViewSet)
+router.register('file_image', viewsets.FileImageViewSet)
 
 urlpatterns = router.urls

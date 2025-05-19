@@ -30,16 +30,6 @@ class ConsultationSerializer(serializers.ModelSerializer):
         model = models.Consultation
         fields = '__all__'
 
-    @action(methods=['POST'], detail=False, parser_classes=[MultiPartParser])
-    def upload_file(self, request, *args, **kwargs):
-        serializer = serializer_params.FileImageItemSerializerParam(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        behavior = behaviors.MediaViewBehavior(**serializer.validated_data)
-        response = behavior.run()
-
-        return Response(data=response, status=status.HTTP_201_CREATED)
-
 
 class FileImageSerializer(serializers.ModelSerializer):
     class Meta:

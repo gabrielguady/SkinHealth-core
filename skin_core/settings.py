@@ -44,8 +44,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
-
-
 ]
 
 MIDDLEWARE = [
@@ -144,6 +142,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissions',
         'rest_framework.permissions.IsAuthenticated'
     ],
 }
@@ -167,3 +166,5 @@ SIMPLE_JWT = {
 
 
 CORS_ALLOW_ALL_ORIGINS=True
+CORS_ALLOW_METHODS = ('DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT')
+CORS_ALLOW_HEADERS = ('*', )

@@ -1,7 +1,9 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
-
-from core import models, serializers
+from rest_framework.response import Response
+from core import models, serializers, serializer_params, behaviors
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -23,6 +25,16 @@ class PatientViewSet(viewsets.ModelViewSet):
 class ConsultationViewSet(viewsets.ModelViewSet):
     queryset = models.Consultation.objects.all()
     serializer_class = serializers.ConsultationSerializer
+
+    @action(methods=['POST'], detail=False, parser_classes=[MultiPartParser])
+    def upload_file(self, request, *args, **kwargs):
+        serializer = serializer_params.FileImageItemSerializerParam(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        behavior = behaviors.MediaViewBehavior(**serializer.validated_data)
+        response = behavior.run()
+
+        return Response(data=response, status=status.HTTP_201_CREATED)
 
 
 class ResultViewSet(viewsets.ModelViewSet):
