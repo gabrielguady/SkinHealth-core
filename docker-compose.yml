@@ -6,15 +6,15 @@ services:
       - "8000:8000"
     environment:
       DB_ENGINE: django.db.backends.postgresql_psycopg2
-      DB_HOST: db-skin
+      DB_HOST: db
       DB_PORT: 5432
       DB_NAME: skin
       DB_USER: postgres
-      DB_PASSWORD: fpf2025
+      DB_PASS: fpf2025
     depends_on:
-      - db-skin
+      - db
 
-  db-skin:
+  db:
     image: postgres:15
     ports:
       - "5432:5432"
