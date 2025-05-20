@@ -25,6 +25,7 @@ class PatientViewSet(viewsets.ModelViewSet):
 class ConsultationViewSet(viewsets.ModelViewSet):
     queryset = models.Consultation.objects.all()
     serializer_class = serializers.ConsultationSerializer
+    permission_classes = [IsAuthenticated]
 
     @action(methods=['POST'], detail=False, parser_classes=[MultiPartParser])
     def upload_file(self, request, *args, **kwargs):

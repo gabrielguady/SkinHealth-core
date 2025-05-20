@@ -48,10 +48,10 @@ class MediaViewBehavior(BaseBehavior):
             raise exceptions.NotUploadMediaMinioException
 
     def create_image_for_consultation(self):
-        if self.consultation_id or self.consultation_id.isdigit():
-            consultation_id = int(self.consultation_id)
-        else:
+        if self.consultation_id is None or not str(self.consultation_id).isdigit():
             raise ValueError(f"ID inválido: {self.consultation_id}")
+
+        consultation_id = int(self.consultation_id)
 
         try:
             consultation = models.Consultation.objects.get(id=consultation_id)
