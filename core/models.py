@@ -58,10 +58,17 @@ class Patient(ModelBase):
                  ('F', 'Female'),
                  ('O', 'Other')]
     )
+    cellphone = models.IntegerField(
+        db_column='nb_cellphone',
+        null=True,
+    )
     cpf = models.CharField(
         db_column='tx_national_id',
         max_length=14,
         unique=True
+    )
+    email = models.EmailField(
+        db_column='tx_email',
     )
 
 
@@ -78,6 +85,10 @@ class Consultation(ModelBase):
     )
     date_consultation = models.DateTimeField(
         db_column='dt_date_consultation',
+    )
+    photo_location = models.CharField(
+        db_column='tx_photo_location',
+        max_length=255,
     )
     notes = models.TextField(
         db_column='tx_notes',

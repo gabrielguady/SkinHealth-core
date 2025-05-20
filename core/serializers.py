@@ -1,9 +1,6 @@
-from rest_framework import serializers, status
-from rest_framework.decorators import action
-from rest_framework.parsers import MultiPartParser
-from rest_framework.response import Response
+from rest_framework import serializers
 
-from core import models, serializer_params, behaviors
+from core import models
 
 
 class UserSerializer(serializers.ModelSerializer):
