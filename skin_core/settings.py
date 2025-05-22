@@ -33,8 +33,6 @@ ALLOWED_HOSTS = ['*']
 
 # Application definition
 
-# skin_core/settings.py
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -46,7 +44,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
-    'storages'
 ]
 
 MIDDLEWARE = [

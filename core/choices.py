@@ -1,0 +1,6 @@
+LIKE = 'unaccent__icontains'
+ICONTAINS = 'icontains'
+EQUALS = 'exact'
+STARTS_WITH = 'startswith'
+GT = 'gt'
+GTE = 'gte'
