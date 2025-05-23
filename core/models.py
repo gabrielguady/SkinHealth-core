@@ -58,10 +58,17 @@ class Patient(ModelBase):
                  ('F', 'Female'),
                  ('O', 'Other')]
     )
+    cellphone = models.IntegerField(
+        db_column='nb_cellphone',
+        null=True,
+    )
     cpf = models.CharField(
         db_column='tx_national_id',
         max_length=14,
         unique=True
+    )
+    email = models.EmailField(
+        db_column='tx_email',
     )
 
 
