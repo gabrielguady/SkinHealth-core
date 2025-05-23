@@ -3,12 +3,13 @@ from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from core import models, serializers, serializer_params, behaviors
+from core import models, serializers, serializer_params, behaviors, filters
 
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
+    filterset_class = filters.UserFilter
 
     def get_permissions(self):
         if self.action in ['create']:
@@ -19,12 +20,14 @@ class UserViewSet(viewsets.ModelViewSet):
 class PatientViewSet(viewsets.ModelViewSet):
     queryset = models.Patient.objects.all()
     serializer_class = serializers.PatientSerializer
+    filterset_class = filters.PatientFilter
     permission_classes = [IsAuthenticated]
 
 
 class ConsultationViewSet(viewsets.ModelViewSet):
     queryset = models.Consultation.objects.all()
     serializer_class = serializers.ConsultationSerializer
+    filterset_class = filters.ConsultationFilter
     permission_classes = [IsAuthenticated]
 
     @action(methods=['POST'], detail=False, parser_classes=[MultiPartParser])

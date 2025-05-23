@@ -69,6 +69,7 @@ class Patient(ModelBase):
     )
     email = models.EmailField(
         db_column='tx_email',
+        null=True,
     )
 
 

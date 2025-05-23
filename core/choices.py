@@ -1,4 +1,4 @@
-LIKE = 'unaccent__icontains'
+LIKE = 'icontains'
 ICONTAINS = 'icontains'
 EQUALS = 'exact'
 STARTS_WITH = 'startswith'
