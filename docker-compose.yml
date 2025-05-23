@@ -1,18 +1,18 @@
 services:
-  web:
-    build: .
-    image: api-skin
-    ports:
-      - "8000:8000"
-    environment:
-      DB_ENGINE: django.db.backends.postgresql_psycopg2
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: skin
-      DB_USER: postgres
-      DB_PASS: fpf2025
-    depends_on:
-      - db
+#  web:
+#    build: .
+#    image: api-skin
+#    ports:
+#      - "8000:8000"
+#    environment:
+#      DB_ENGINE: django.db.backends.postgresql_psycopg2
+#      DB_HOST: db
+#      DB_PORT: 5432
+#      DB_NAME: skin
+#      DB_USER: postgres
+#      DB_PASS: fpf2025
+#    depends_on:
+#      - db
 
   db:
     image: postgres:15
