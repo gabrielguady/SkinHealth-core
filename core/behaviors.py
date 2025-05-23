@@ -23,7 +23,7 @@ class MediaViewBehavior(BaseBehavior):
         self.file_obj = kwargs.get('file_obj')
         self.current_time = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
         self.file_extension = os.path.splitext(self.file_obj.name)[1]
-        self.file_key = f'consultations/{self.consultation_id}_{self.current_time}{self.file_extension}'
+        self.file_key = f'consultation/{self.consultation_id}_{self.current_time}{self.file_extension}'
 
     @staticmethod
     def s3_client_init():
