@@ -1,55 +1,80 @@
 services:
-  web:
-    build: .
-    image: api-skin
+  web: # Nome do serviço Django
+    build: . # O contexto de build é o diretório atual (onde está o Dockerfile)
+    image: api-skin # Nome da imagem Docker que será construída
     ports:
-      - "8000:8000"
-    environment:
-      DB_ENGINE: django.db.backends.postgresql_psycopg2
-      DB_HOST: db
+      - "8000:8000" # Mapeia a porta 8000 do host para a porta 8000 do contêiner
+    environment: # Variáveis de ambiente para o contêiner 'web'
+      # Correção: O ENGINE do Django para PostgreSQL é 'django.db.backends.postgresql'
+      DB_ENGINE: django.db.backends.postgresql
+      DB_HOST: db # O nome do serviço do banco de dados no docker-compose é 'db'
       DB_PORT: 5432
       DB_NAME: skin
       DB_USER: postgres
-      DB_PASS: fpf2025
+      DB_PASS: fpf2025 # Cuidado com senhas em arquivos de configuração! Use .env para produção.
+      # Se você usava outras variáveis (SECRET_KEY, DEBUG), adicione-as aqui ou use um .env
     depends_on:
-      - db
+      - db # O serviço 'web' depende do serviço 'db' para iniciar
+    volumes: # <--- ADIÇÃO CRÍTICA AQUI
+      # Monta o diretório atual do seu projeto (onde está o docker-compose.yml)
+      # para o diretório /app dentro do contêiner. Essencial para ver as mudanças no código.
+      - .:/app
+    networks: # <--- ADIÇÃO CRÍTICA AQUI
+      - app-network # Conecta o serviço 'web' à rede personalizada
+    command: ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"] # <--- ADIÇÃO CRÍTICA AQUI
+    # Comando para executar dentro do contêiner após ele subir:
+    # 1. Aplica as migrações do Django
+    # 2. Inicia o servidor de desenvolvimento do Django
+    restart: on-failure # Reinicia o contêiner se ele falhar
 
-  db:
-    image: postgres:15
+  db: # Nome do serviço PostgreSQL
+    image: postgres:15 # Imagem do PostgreSQL
     ports:
-      - "5432:5432"
-    restart: always
+      - "5432:5432" # Mapeia a porta 5432 do host para a porta 5432 do contêiner (opcional se não precisar acessar do host)
+    restart: always # Reinicia o contêiner sempre
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=skin
       - POSTGRES_PASSWORD=fpf2025
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/data # Volume para persistir os dados do banco de dados
+    networks: # <--- ADIÇÃO AQUI
+      - app-network # Conecta o serviço 'db' à rede personalizada
 
-  pgadmin-api-core:
+  pgadmin-api-core: # Nome do serviço PgAdmin
     image: dpage/pgadmin4
     restart: always
     environment:
       PGADMIN_DEFAULT_EMAIL: "user@gmail.com"
       PGADMIN_DEFAULT_PASSWORD: "admin"
     ports:
-      - "14549:80"
+      - "14549:80" # Mapeia a porta 14549 do host para a porta 80 do contêiner
+    depends_on: # <--- ADIÇÃO AQUI (boa prática)
+      - db # PgAdmin depende do banco de dados
+    networks: # <--- ADIÇÃO AQUI
+      - app-network # Conecta o serviço 'pgadmin-api-core' à rede personalizada
 
-  minio-api:
+  minio-api: # Nome do serviço MinIO
     hostname: minio-skin
     image: 'minio/minio:latest'
-    container_name: minio
+    container_name: minio # Nome do contêiner específico (opcional, mas definido)
     restart: always
     ports:
       - '9000:9000'
       - '9001:9001'
     volumes:
-      - minio-data-skin:/data
+      - minio-data-skin:/data # Volume para persistir os dados do MinIO
     environment:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio123
-    command: server /data --console-address ":9001"
+    command: server /data --console-address ":9001" # Comando para iniciar o MinIO
+    networks: # <--- ADIÇÃO AQUI
+      - app-network # Conecta o serviço 'minio-api' à rede personalizada
 
 volumes:
-  db-data: {}
-  minio-data-skin: {}
+  db-data: {} # Definição do volume para o PostgreSQL
+  minio-data-skin: {} # Definição do volume para o MinIO
+
+networks: # <--- ADIÇÃO CRÍTICA AQUI
+  app-network:
+    driver: bridge # Definição da rede personalizada
