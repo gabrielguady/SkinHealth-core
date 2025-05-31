@@ -1,6 +1,8 @@
-from rest_framework import serializers
-from django.contrib.auth.hashers import make_password
+
 from .models import User, Patient, Consultation, FileImageSkin, AnalysisResult
+from rest_framework import serializers
+from datetime import datetime
+from .models import Patient
 
 
 
@@ -45,8 +47,74 @@ class PatientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Patient
-        fields = '__all__'
+        fields = (
+            'id',
+            'name',
+            'date_of_birth',
+            'gender',
+            'cellphone',
+            'cpf',
+            'email',
+            'user_created_by',
+            'date_created',
+            'date_modified',
+            'active',
+        )
         read_only_fields = ('id', 'user_created_by', 'date_created', 'date_modified', 'active')
+
+    # def validate_date_of_birth(self, value):
+    #     """
+    #     Converte a data do formato 'dd/mm/aaaa' para um objeto date.
+    #     """
+    #     if value:
+    #         try:
+    #             return datetime.strptime(value, '%d/%m/%Y').date()
+    #         except ValueError:
+    #             raise serializers.ValidationError("Formato de data inválido. Use dd/mm/aaaa.")
+    #     return value
+
+    def validate_gender(self, value):
+        """
+        Converte 'Masculino'/'Feminino'/'Outro' para 'M'/'F'/'O' ao salvar.
+        """
+        gender_mapping = {
+            "Masculino": "M",
+            "Feminino": "F",
+            "Outro": "O"
+        }
+        if value in gender_mapping:
+            return gender_mapping[value]
+        if value in dict(Patient.gender.field.choices).keys():
+            return value
+        raise serializers.ValidationError("Gênero inválido. Use 'Masculino', 'Feminino', 'Outro', ou 'M', 'F', 'O'.")
+
+    def validate_cpf(self, value):
+        """
+        Valida o formato do CPF (opcional, pode ser personalizado conforme regras do Brasil).
+        """
+        if value:
+            # Remove caracteres não numéricos
+            cpf = ''.join(filter(str.isdigit, value))
+            if len(cpf) != 11:
+                raise serializers.ValidationError("CPF deve ter 11 dígitos.")
+            # Aqui você pode adicionar validações mais completas para CPF, se necessário
+        return value
+
+    def to_representation(self, instance):
+        """
+        Converte date_of_birth e gender para o formato esperado pelo frontend ao retornar.
+        """
+        ret = super().to_representation(instance)
+        if ret['date_of_birth']:
+            ret['date_of_birth'] = instance.date_of_birth.strftime('%d/%m/%Y')
+        gender_mapping = {
+            "M": "Masculino",
+            "F": "Feminino",
+            "O": "Outro"
+        }
+        if ret['gender']:
+            ret['gender'] = gender_mapping.get(ret['gender'], ret['gender'])
+        return ret
 
 
 class ConsultationSerializer(serializers.ModelSerializer):

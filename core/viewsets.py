@@ -1,11 +1,15 @@
 # core/viewsets.py
 
-from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
-from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import Patient
+from .serializers import PatientSerializer
 
 from . import models, serializers
 from . import serializer_params
@@ -22,40 +26,81 @@ class UserViewSet(viewsets.ModelViewSet):
         - 'create' (registro): Permitido para qualquer usuário (não autenticado).
         - Outras ações: Requer autenticação.
         """
-        if self.action == 'create':
+        if self.action in ['create', 'list']:
             return [AllowAny()]
         return [IsAuthenticated()]
 
-    def get_queryset(self):
-        """
-        Garante que um usuário só pode ver/gerenciar seu próprio perfil.
-        Para listar todos os usuários (apenas para admins), seria necessário outra view/permissão.
-        """
-        if self.request.user.is_authenticated:
-            return models.User.objects.filter(id=self.request.user.id)
-        return models.User.objects.none()
-
-    def perform_create(self, serializer):
-
-        serializer.save()
+    # def get_queryset(self):
+    #     if self.request.user.is_authenticated:
+    #         if self.request.user.is_superuser:  # Só admins podem ver todos os usuários
+    #             return AuthUser.objects.all()
+    #         return AuthUser.objects.filter(id=self.request.user.id)
+    #     return AuthUser.objects.none()
+    #
+    # def perform_create(self, serializer):
+    #
+    #     serializer.save()
 
 
 class PatientViewSet(viewsets.ModelViewSet):
-    queryset = models.Patient.objects.all()
-    serializer_class = serializers.PatientSerializer
+    queryset = Patient.objects.all()
+    serializer_class = PatientSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """
         Filtra pacientes para que um usuário só possa ver/gerenciar seus próprios pacientes.
         """
-        return models.Patient.objects.filter(user_created_by=self.request.user)
+        return Patient.objects.filter(user_created_by=self.request.user)
 
     def perform_create(self, serializer):
         """
         Associa o paciente ao usuário autenticado quando ele é criado.
         """
         serializer.save(user_created_by=self.request.user)
+
+    def update(self, request, *args, **kwargs):
+        """
+        Garante que apenas o criador ou um superusuário possa atualizar o paciente.
+        """
+        instance = self.get_object()
+        if instance.user_created_by != request.user and not request.user.is_superuser:
+            return Response(
+                {"detail": "Você não tem permissão para atualizar este paciente."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        Garante que apenas o criador ou um superusuário possa deletar o paciente.
+        """
+        instance = self.get_object()
+        if instance.user_created_by != request.user and not request.user.is_superuser:
+            return Response(
+                {"detail": "Você não tem permissão para deletar este paciente."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
+
+
+# class PatientViewSet(viewsets.ModelViewSet):
+#     queryset = models.Patient.objects.all()
+#     serializer_class = serializers.PatientSerializer
+#     permission_classes = [AllowAny]  # Permite acesso público
+#
+#     def get_queryset(self):
+#         user = self.request.user
+#         if user.is_authenticated:
+#             return models.Patient.objects.filter(user_created_by=user)
+#         else:
+#             return models.Patient.objects.all()  # ou .none() para esconder dados anônimos
+#
+#     def perform_create(self, serializer):
+#         if self.request.user.is_authenticated:
+#             serializer.save(user_created_by=self.request.user)
+#         else:
+#             serializer.save(user_created_by=None)
 
 
 class ConsultationViewSet(viewsets.ModelViewSet):

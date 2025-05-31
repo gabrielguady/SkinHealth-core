@@ -1,36 +1,36 @@
 services:
-  web: # Nome do serviço Django
-    build: . # O contexto de build é o diretório atual (onde está o Dockerfile)
-    image: api-skin # Nome da imagem Docker que será construída
-    ports:
-      - "8000:8000" # Mapeia a porta 8000 do host para a porta 8000 do contêiner
-    environment: # Variáveis de ambiente para o contêiner 'web'
-      # Correção: O ENGINE do Django para PostgreSQL é 'django.db.backends.postgresql'
-      DB_ENGINE: django.db.backends.postgresql
-      DB_HOST: db # O nome do serviço do banco de dados no docker-compose é 'db'
-      DB_PORT: 5432
-      DB_NAME: skin
-      DB_USER: postgres
-      DB_PASS: fpf2025 # Cuidado com senhas em arquivos de configuração! Use .env para produção.
-      # Se você usava outras variáveis (SECRET_KEY, DEBUG), adicione-as aqui ou use um .env
-    depends_on:
-      - db # O serviço 'web' depende do serviço 'db' para iniciar
-    volumes: # <--- ADIÇÃO CRÍTICA AQUI
-      # Monta o diretório atual do seu projeto (onde está o docker-compose.yml)
-      # para o diretório /app dentro do contêiner. Essencial para ver as mudanças no código.
-      - .:/app
-    networks: # <--- ADIÇÃO CRÍTICA AQUI
-      - app-network # Conecta o serviço 'web' à rede personalizada
-    command: ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"] # <--- ADIÇÃO CRÍTICA AQUI
-    # Comando para executar dentro do contêiner após ele subir:
-    # 1. Aplica as migrações do Django
-    # 2. Inicia o servidor de desenvolvimento do Django
-    restart: on-failure # Reinicia o contêiner se ele falhar
+#  web: # Nome do serviço Django
+#    build: . # O contexto de build é o diretório atual (onde está o Dockerfile)
+#    image: api-skin # Nome da imagem Docker que será construída
+#    ports:
+#      - "8000:8000" # Mapeia a porta 8000 do host para a porta 8000 do contêiner
+#    environment: # Variáveis de ambiente para o contêiner 'web'
+#      # Correção: O ENGINE do Django para PostgreSQL é 'django.db.backends.postgresql'
+#      DB_ENGINE: django.db.backends.postgresql
+#      DB_HOST: db # O nome do serviço do banco de dados no docker-compose é 'db'
+#      DB_PORT: 5432
+#      DB_NAME: skin
+#      DB_USER: postgres
+#      DB_PASS: fpf2025 # Cuidado com senhas em arquivos de configuração! Use .env para produção.
+#      # Se você usava outras variáveis (SECRET_KEY, DEBUG), adicione-as aqui ou use um .env
+#    depends_on:
+#      - db # O serviço 'web' depende do serviço 'db' para iniciar
+#    volumes: # <--- ADIÇÃO CRÍTICA AQUI
+#      # Monta o diretório atual do seu projeto (onde está o docker-compose.yml)
+#      # para o diretório /app dentro do contêiner. Essencial para ver as mudanças no código.
+#      - .:/app
+#    networks: # <--- ADIÇÃO CRÍTICA AQUI
+#      - app-network # Conecta o serviço 'web' à rede personalizada
+#    command: ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"] # <--- ADIÇÃO CRÍTICA AQUI
+#    # Comando para executar dentro do contêiner após ele subir:
+#    # 1. Aplica as migrações do Django
+#    # 2. Inicia o servidor de desenvolvimento do Django
+#    restart: on-failure # Reinicia o contêiner se ele falhar
 
   db: # Nome do serviço PostgreSQL
     image: postgres:15 # Imagem do PostgreSQL
     ports:
-      - "5432:5432" # Mapeia a porta 5432 do host para a porta 5432 do contêiner (opcional se não precisar acessar do host)
+      - "5435:5432" # Mapeia a porta 5432 do host para a porta 5432 do contêiner (opcional se não precisar acessar do host)
     restart: always # Reinicia o contêiner sempre
     environment:
       - POSTGRES_USER=postgres

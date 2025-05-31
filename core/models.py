@@ -33,16 +33,16 @@ class ModelBase(models.Model):
 class User(AbstractUser):
     # SOBRESCREVER O CAMPO USERNAME PARA REMOVER/SUBSTITUIR OS VALIDORES PADRÃO
     # O AbstractUser define username com max_length=150. É bom manter isso.
-    username = models.CharField(
-        db_column='tx_username',
-        max_length=150,
-        unique=True,
-        help_text=('Obrigatório. 150 caracteres ou menos. Letras, números, @/./+/-/_ e espaços.'),
-        error_messages={
-            'unique': ("Já existe um usuário com este nome de usuário."),
-        },
-        validators=[custom_username_validator],
-    )
+    # username = models.CharField(
+    #     db_column='tx_username',
+    #     max_length=150,
+    #     unique=True,
+    #     help_text=('Obrigatório. 150 caracteres ou menos. Letras, números, @/./+/-/_ e espaços.'),
+    #     error_messages={
+    #         'unique': ("Já existe um usuário com este nome de usuário."),
+    #     },
+    #     validators=[custom_username_validator],
+    # )
 
     professional_id = models.CharField(
         db_column='tx_professional_id',
