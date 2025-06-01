@@ -1,16 +1,20 @@
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import User, Patient, Consultation, FileImageSkin, AnalysisResult
 from rest_framework import serializers
-from datetime import datetime
 from .models import Patient
 
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
 
+        data['user_name'] = self.user.username
+        data['email'] = self.user.email
+
+        return data
 
 class UserSerializer(serializers.ModelSerializer):
-    """
-    Serializador para o modelo de Usuário.
-    Usado para cadastro, login e visualização de perfil de usuário.
-    """
+
     class Meta:
         model = User
         fields = '__all__'
@@ -20,9 +24,6 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'date_created', 'date_modified', 'active')
 
     def create(self, validated_data):
-        """
-        Sobrescreve o método create para hashear a senha antes de salvar.
-        """
         password = validated_data.pop('password')
         user = User(**validated_data)
         user.set_password(password)
@@ -30,9 +31,6 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
     def update(self, instance, validated_data):
-        """
-        Sobrescreve o método update para hashear a senha se ela for fornecida.
-        """
         if 'password' in validated_data:
             password = validated_data.pop('password')
             instance.set_password(password)
@@ -40,9 +38,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class PatientSerializer(serializers.ModelSerializer):
-    """
-    Serializador para o modelo de Paciente.
-    """
     user_created_by = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
@@ -62,21 +57,7 @@ class PatientSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('id', 'user_created_by', 'date_created', 'date_modified', 'active')
 
-    # def validate_date_of_birth(self, value):
-    #     """
-    #     Converte a data do formato 'dd/mm/aaaa' para um objeto date.
-    #     """
-    #     if value:
-    #         try:
-    #             return datetime.strptime(value, '%d/%m/%Y').date()
-    #         except ValueError:
-    #             raise serializers.ValidationError("Formato de data inválido. Use dd/mm/aaaa.")
-    #     return value
-
     def validate_gender(self, value):
-        """
-        Converte 'Masculino'/'Feminino'/'Outro' para 'M'/'F'/'O' ao salvar.
-        """
         gender_mapping = {
             "Masculino": "M",
             "Feminino": "F",
@@ -89,21 +70,13 @@ class PatientSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError("Gênero inválido. Use 'Masculino', 'Feminino', 'Outro', ou 'M', 'F', 'O'.")
 
     def validate_cpf(self, value):
-        """
-        Valida o formato do CPF (opcional, pode ser personalizado conforme regras do Brasil).
-        """
         if value:
-            # Remove caracteres não numéricos
             cpf = ''.join(filter(str.isdigit, value))
             if len(cpf) != 11:
                 raise serializers.ValidationError("CPF deve ter 11 dígitos.")
-            # Aqui você pode adicionar validações mais completas para CPF, se necessário
         return value
 
     def to_representation(self, instance):
-        """
-        Converte date_of_birth e gender para o formato esperado pelo frontend ao retornar.
-        """
         ret = super().to_representation(instance)
         if ret['date_of_birth']:
             ret['date_of_birth'] = instance.date_of_birth.strftime('%d/%m/%Y')
@@ -118,21 +91,15 @@ class PatientSerializer(serializers.ModelSerializer):
 
 
 class ConsultationSerializer(serializers.ModelSerializer):
-    """
-    Serializador para o modelo de Consulta.
-    Inclui detalhes do paciente e imagens aninhadas para facilitar a visualização.
-    """
-    # Campos aninhados para exibição de detalhes (apenas leitura)
-    patient_details = PatientSerializer(source='patient', read_only=True)
-    images = serializers.SerializerMethodField() # Usaremos um método para obter as imagens relacionadas
 
-    # Campos de relacionamento para exibir o ID do usuário/agente (apenas leitura)
+    patient_details = PatientSerializer(source='patient', read_only=True)
+    images = serializers.SerializerMethodField()
+
     agent = serializers.PrimaryKeyRelatedField(read_only=True)
     user_created_by = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Consultation
-        # Listamos os campos explicitamente aqui, pois '__all__' não funcionaria bem com SerializerMethodField
         fields = (
             'id',
             'agent',
@@ -157,24 +124,15 @@ class ConsultationSerializer(serializers.ModelSerializer):
             'date_modified',
             'active',
         )
-        extra_kwargs = {
-            'patient': {'write_only': True}
-        }
+
 
     def get_images(self, obj):
-        """
-        Retorna os serializadores para as imagens associadas a esta consulta.
-        """
         from .serializers import FileImageSkinSerializer
         images = obj.images.filter(active=True)
         return FileImageSkinSerializer(images, many=True, read_only=True, context=self.context).data
 
 
 class FileImageSkinSerializer(serializers.ModelSerializer):
-    """
-    Serializador para o modelo de Imagem de Pele (FileImageSkin).
-    Lida com o upload do arquivo e a geração da URL de acesso.
-    """
     image_file = serializers.FileField(write_only=True, required=False)
     image_url = serializers.SerializerMethodField()
 
@@ -206,13 +164,11 @@ class FileImageSkinSerializer(serializers.ModelSerializer):
         }
 
     def get_image_url(self, obj):
-        """        Retorna a URL completa para acessar a imagem no MinIO/S3.    """
         if obj.image_file and obj.image_file.url:
             return obj.image_file.url
         return None
 
     def create(self, validated_data):
-        """        Sobrescreve o método create para lidar com o upload do arquivo.  """
         image_file = validated_data.pop('image_file', None)
         consultation = validated_data.pop('consultation')
         request = self.context.get('request')
@@ -231,8 +187,6 @@ class FileImageSkinSerializer(serializers.ModelSerializer):
         return file_image_skin
 
     def update(self, instance, validated_data):
-        """ Sobrescreve o método update para lidar com a atualização do arquivo de imagem. """
-
         image_file = validated_data.pop('image_file', None)
         if image_file:
             instance.image_file.save(image_file.name, image_file)
@@ -241,10 +195,6 @@ class FileImageSkinSerializer(serializers.ModelSerializer):
 
 
 class AnalysisResultSerializer(serializers.ModelSerializer):
-    """
-    Serializador para o modelo de Resultado de Análise (AnalysisResult).
-    Inclui detalhes da imagem aninhados.
-    """
     image_details = FileImageSkinSerializer(source='image', read_only=True)
     user_created_by = serializers.PrimaryKeyRelatedField(read_only=True)
 
@@ -271,5 +221,5 @@ class AnalysisResultSerializer(serializers.ModelSerializer):
             'active',
         )
         extra_kwargs = {
-            'image': {'write_only': True} # ID da imagem é para escrita, mas não exibido diretamente
+            'image': {'write_only': True}
         }

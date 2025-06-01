@@ -110,7 +110,7 @@ class Consultation(ModelBase):
     )
     patient = models.ForeignKey(
         Patient,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         db_column='id_patient',
         related_name='consultations',
     )
