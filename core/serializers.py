@@ -1,8 +1,6 @@
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
-from .models import User, Patient, Consultation, FileImageSkin, AnalysisResult
 from rest_framework import serializers
-from .models import Patient
+from core import models
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
@@ -16,7 +14,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = User
+        model = models.User
         fields = '__all__'
         extra_kwargs = {
             'password': {'write_only': True, 'required': True}
@@ -25,7 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop('password')
-        user = User(**validated_data)
+        user = models.User(**validated_data)
         user.set_password(password)
         user.save()
         return user
@@ -41,20 +39,8 @@ class PatientSerializer(serializers.ModelSerializer):
     user_created_by = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
-        model = Patient
-        fields = (
-            'id',
-            'name',
-            'date_of_birth',
-            'gender',
-            'cellphone',
-            'cpf',
-            'email',
-            'user_created_by',
-            'date_created',
-            'date_modified',
-            'active',
-        )
+        model = models.Patient
+        fields = '__all__'
         read_only_fields = ('id', 'user_created_by', 'date_created', 'date_modified', 'active')
 
     def validate_gender(self, value):
@@ -65,7 +51,7 @@ class PatientSerializer(serializers.ModelSerializer):
         }
         if value in gender_mapping:
             return gender_mapping[value]
-        if value in dict(Patient.gender.field.choices).keys():
+        if value in dict(models.Patient.gender.field.choices).keys():
             return value
         raise serializers.ValidationError("Gênero inválido. Use 'Masculino', 'Feminino', 'Outro', ou 'M', 'F', 'O'.")
 
@@ -99,21 +85,8 @@ class ConsultationSerializer(serializers.ModelSerializer):
     user_created_by = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
-        model = Consultation
-        fields = (
-            'id',
-            'agent',
-            'patient',
-            'patient_details',
-            'date_consultation',
-            'photo_location',
-            'notes',
-            'images',
-            'user_created_by',
-            'date_created',
-            'date_modified',
-            'active',
-        )
+        model = models.Consultation
+        fields = '__all__'
         read_only_fields = (
             'id',
             'agent',
@@ -137,19 +110,8 @@ class FileImageSkinSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
 
     class Meta:
-        model = FileImageSkin
-        fields = (
-            'id',
-            'filename',
-            'remote_name',
-            'image_file',
-            'image_url',
-            'consultation',
-            'user_created_by',
-            'date_created',
-            'date_modified',
-            'active',
-        )
+        model = models.FileImageSkin
+        fields = '__all__'
         read_only_fields = (
             'id',
             'remote_name',
@@ -173,7 +135,7 @@ class FileImageSkinSerializer(serializers.ModelSerializer):
         consultation = validated_data.pop('consultation')
         request = self.context.get('request')
 
-        file_image_skin = FileImageSkin.objects.create(
+        file_image_skin = models.FileImageSkin.objects.create(
             consultation=consultation,
             user_created_by=request.user if request else None,
             **validated_data
@@ -199,19 +161,8 @@ class AnalysisResultSerializer(serializers.ModelSerializer):
     user_created_by = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
-        model = AnalysisResult
-        fields = (
-            'id',
-            'image',
-            'image_details',
-            'result',
-            'confidence',
-            'model_version',
-            'user_created_by',
-            'date_created',
-            'date_modified',
-            'active',
-        )
+        model = models.AnalysisResult
+        fields = '__all__'
         read_only_fields = (
             'id',
             'image_details',
