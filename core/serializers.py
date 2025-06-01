@@ -94,7 +94,6 @@ class ConsultationSerializer(serializers.ModelSerializer):
 
     patient_details = PatientSerializer(source='patient', read_only=True)
     images = serializers.SerializerMethodField()
-
     agent = serializers.PrimaryKeyRelatedField(read_only=True)
     user_created_by = serializers.PrimaryKeyRelatedField(read_only=True)
 
