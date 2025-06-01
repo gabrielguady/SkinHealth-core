@@ -1,5 +1,3 @@
-# core/viewsets.py
-
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -7,15 +5,9 @@ from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import AuthUser
 
-from .models import Patient
-from .serializers import PatientSerializer
-
-from . import models, serializers
-from . import serializer_params
-from . import behaviors
+from core import models, serializers, behaviors, serializer_params
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -40,12 +32,12 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class PatientViewSet(viewsets.ModelViewSet):
-    queryset = Patient.objects.all()
-    serializer_class = PatientSerializer
+    queryset = models.Patient.objects.all()
+    serializer_class = serializers.PatientSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Patient.objects.filter(user_created_by=self.request.user)
+        return models.Patient.objects.filter(user_created_by=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(user_created_by=self.request.user)
