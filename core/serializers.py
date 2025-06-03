@@ -35,10 +35,12 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class PatientSerializer(serializers.ModelSerializer):
+    user_created_by = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = models.Patient
         fields = '__all__'
+
 
     def validate_gender(self, value):
         gender_mapping = {
@@ -74,15 +76,12 @@ class PatientSerializer(serializers.ModelSerializer):
 
 
 class ConsultationSerializer(serializers.ModelSerializer):
+    patient_details = PatientSerializer(source='patient', read_only=True)
+    agent = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = models.Consultation
         fields = '__all__'
-
-
-    def get_images(self, obj):
-        images = obj.images.filter(active=True)
-        return FileImageSkinSerializer(images, many=True, read_only=True, context=self.context).data
 
 
 class FileImageSkinSerializer(serializers.ModelSerializer):

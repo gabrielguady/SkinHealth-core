@@ -90,11 +90,16 @@ class Consultation(ModelBase):
     )
     patient = models.ForeignKey(
         Patient,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         db_column='id_patient',
     )
     date_consultation = models.DateTimeField(
         db_column='dt_date_consultation',
+    )
+    photo_location = models.CharField(
+        db_column='tx_photo_location',
+        max_length=255,
+        null=True,
     )
     notes = models.TextField(
         db_column='tx_notes',
