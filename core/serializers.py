@@ -19,7 +19,6 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True, 'required': True}
         }
-        read_only_fields = ('id', 'date_created', 'date_modified', 'active')
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -41,7 +40,6 @@ class PatientSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Patient
         fields = '__all__'
-        read_only_fields = ('id', 'user_created_by', 'date_created', 'date_modified', 'active')
 
     def validate_gender(self, value):
         gender_mapping = {
@@ -87,20 +85,9 @@ class ConsultationSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Consultation
         fields = '__all__'
-        read_only_fields = (
-            'id',
-            'agent',
-            'patient_details',
-            'images',
-            'user_created_by',
-            'date_created',
-            'date_modified',
-            'active',
-        )
 
 
     def get_images(self, obj):
-        from .serializers import FileImageSkinSerializer
         images = obj.images.filter(active=True)
         return FileImageSkinSerializer(images, many=True, read_only=True, context=self.context).data
 
@@ -112,15 +99,6 @@ class FileImageSkinSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.FileImageSkin
         fields = '__all__'
-        read_only_fields = (
-            'id',
-            'remote_name',
-            'user_created_by',
-            'date_created',
-            'date_modified',
-            'active',
-            'image_url',
-        )
         extra_kwargs = {
             'consultation': {'write_only': True}
         }
@@ -163,14 +141,6 @@ class AnalysisResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.AnalysisResult
         fields = '__all__'
-        read_only_fields = (
-            'id',
-            'image_details',
-            'user_created_by',
-            'date_created',
-            'date_modified',
-            'active',
-        )
         extra_kwargs = {
             'image': {'write_only': True}
         }

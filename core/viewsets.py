@@ -7,7 +7,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import AuthUser
 
-from core import models, serializers, behaviors, serializer_params
+from core import models, serializers, behaviors, serializer_params, filters
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -34,6 +34,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class PatientViewSet(viewsets.ModelViewSet):
     queryset = models.Patient.objects.all()
     serializer_class = serializers.PatientSerializer
+    filterset_class = filters.PatientFilter
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -63,16 +64,16 @@ class PatientViewSet(viewsets.ModelViewSet):
 class ConsultationViewSet(viewsets.ModelViewSet):
     queryset = models.Consultation.objects.all()
     serializer_class = serializers.ConsultationSerializer
+    filterset_class = filters.ConsultationFilter
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
-        return models.Consultation.objects.filter(agent=user) | \
-               models.Consultation.objects.filter(user_created_by=user)
+        return models.Consultation.objects.filter(agent=user)
 
     def perform_create(self, serializer):
         user = self.request.user
-        serializer.save(agent=user, user_created_by=user)
+        serializer.save(agent=user)
 
     @action(methods=['POST'], detail=False, parser_classes=[MultiPartParser, FormParser])
     def upload_file(self, request, *args, **kwargs):
@@ -86,7 +87,7 @@ class ConsultationViewSet(viewsets.ModelViewSet):
         consultation = get_object_or_404(
             models.Consultation,
             id=consultation_id,
-            user_created_by=request.user
+            agent=request.user
         )
 
         user = request.user
@@ -120,17 +121,9 @@ class FileImageSkinViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        if self.request.user.is_authenticated:
-            queryset = queryset.filter(user_created_by=self.request.user)
-        else:
-            queryset = queryset.none()
-
         id_consultation = self.request.query_params.get('id_consultation')
 
         if id_consultation:
             queryset = queryset.filter(consultation__id=id_consultation)
 
         return queryset
-
-    def perform_create(self, serializer):
-        serializer.save(user_created_by=self.request.user)

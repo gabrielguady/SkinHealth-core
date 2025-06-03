@@ -70,6 +70,12 @@ class Patient(ModelBase):
     email = models.EmailField(
         db_column='tx_email',
     )
+    user_created_by = models.ForeignKey(
+        User,
+        db_column='tx_user_created_by',
+        null=False,
+        on_delete=models.DO_NOTHING,
+    )
 
 
 class Consultation(ModelBase):
@@ -91,7 +97,6 @@ class Consultation(ModelBase):
         blank=True,
         null=True
     )
-
 
 class FileImageSkin(ModelBase):
     filename = models.CharField(
