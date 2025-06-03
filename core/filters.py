@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django_filters import filterset
 from django_filters import rest_framework as filters
 
@@ -23,11 +24,17 @@ class PatientFilter(filterset.FilterSet):
         fields = ['name', 'date_of_birth', 'gender', 'cellphone', 'cpf', 'email']
 
 class ConsultationFilter(filterset.FilterSet):
-    agent = filters.CharFilter(lookup_expr=choices.LIKE)
+    agent = filters.CharFilter(lookup_expr=choices.EQUALS)
     patient = filters.CharFilter(field_name='patient__name', lookup_expr=choices.LIKE)
     date_consultation = filters.DateFilter(lookup_expr=choices.ICONTAINS)
     notes = filters.CharFilter(lookup_expr=choices.LIKE)
 
+    @staticmethod
+    def filter_agent(queryset, name, value):
+        return queryset.filter(
+            Q(agent__icontains=value))
+
     class Meta:
         model = models.Consultation
         fields = ['agent', 'patient', 'date_consultation', 'notes']
+

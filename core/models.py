@@ -58,7 +58,7 @@ class Patient(ModelBase):
                  ('F', 'Female'),
                  ('O', 'Other')]
     )
-    cellphone = models.IntegerField(
+    cellphone = models.CharField(
         db_column='nb_cellphone',
         null=True,
     )
@@ -76,6 +76,10 @@ class Patient(ModelBase):
         null=False,
         on_delete=models.DO_NOTHING,
     )
+
+    class Meta:
+        db_table = 'patient'
+        managed = True
 
 
 class Consultation(ModelBase):
@@ -97,6 +101,11 @@ class Consultation(ModelBase):
         blank=True,
         null=True
     )
+
+    class Meta:
+        db_table = 'consultation'
+        managed = True
+
 
 class FileImageSkin(ModelBase):
     filename = models.CharField(
