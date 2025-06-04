@@ -84,9 +84,9 @@ WSGI_APPLICATION = 'skin_core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql_psycopg2'),
-        'NAME': os.getenv('DB_NAME','db'),
+        'NAME': os.getenv('DB_NAME','skin'),
         'USER': os.getenv('DB_USER','postgres'),
-        'PASSWORD': os.getenv('DB_PASS', 'skin'),
+        'PASSWORD': os.getenv('DB_PASS', 'fpf2025'),
         'HOST': os.getenv('DB_HOST', 'db'),
         'PORT': os.getenv('DB_PORT', '5432'),
     },
