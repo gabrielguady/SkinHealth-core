@@ -27,7 +27,6 @@ class ModelBase(models.Model):
         abstract = True
         managed = True
 
-
 class User(AbstractUser):
     professional_id = models.CharField(
         db_column='tx_professional_id',
@@ -39,7 +38,6 @@ class User(AbstractUser):
     class Meta:
         verbose_name = 'User'
         verbose_name_plural = 'Users'
-
 
 class Patient(ModelBase):
     name = models.CharField(
@@ -71,7 +69,6 @@ class Patient(ModelBase):
         db_column='tx_email',
     )
 
-
 class Consultation(ModelBase):
     agent = models.ForeignKey(
         User,
@@ -95,7 +92,17 @@ class Consultation(ModelBase):
         blank=True,
         null=True
     )
-
+    ai_diagnosis = models.CharField(
+        db_column='tx_ai_diagnosis',
+        max_length=255,
+        blank=True,
+        null=True
+    )
+    ai_confidence = models.FloatField(
+        db_column='nb_ai_confidence',
+        blank=True,
+        null=True
+    )
 
 class FileImageSkin(ModelBase):
     filename = models.CharField(
@@ -104,9 +111,9 @@ class FileImageSkin(ModelBase):
         blank=False,
         max_length=255,
     )
-    remote_name = models.CharField(
-        db_column='tx_remote_name',
-        max_length=1024,
+
+    image_file = models.ImageField(
+        upload_to='skin_images/',
         null=False,
         blank=False,
     )
@@ -114,6 +121,7 @@ class FileImageSkin(ModelBase):
         Consultation,
         on_delete=models.DO_NOTHING,
         db_column='id_consultation',
+        related_name='images'
     )
 
     class Meta:

@@ -22,13 +22,14 @@ load_dotenv()
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-3h*x!x*dog-ev!$ph%$m98^rx!b!1t+n-2*01kdi3z+1ok%yvk'
+# Melhor carregar de variável de ambiente também para produção
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-3h*x!x*dog-ev!$ph%$m98^rx!b!1t+n-2*01kdi3z+1ok%yvk')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Em produção, você deve definir DEBUG como False
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = ['*']
-
+ALLOWED_HOSTS = ['*'] # Cuidado com '*' em produção, use domínios específicos
 
 
 # Application definition
@@ -44,6 +45,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'storages',  ## ADICIONADO PARA MINIO ##
 ]
 
 MIDDLEWARE = [
@@ -128,6 +130,7 @@ AUTH_USER_MODEL = 'core.User'
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles' # Adicione isso para coletar estáticos em produção
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -138,13 +141,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication', # Pode remover em apps puramente API
+        'rest_framework.authentication.BasicAuthentication',    # Pode remover em apps puramente API
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.DjangoModelPermissions',
-        'rest_framework.permissions.IsAuthenticated'
+        'rest_framework.permissions.IsAuthenticated', # Geralmente mais direto para APIs REST
+        # 'rest_framework.permissions.DjangoModelPermissions', # Removido para simplificar permissions
     ],
+    'DEFAULT_PARSER_CLASSES': (  ## ADICIONADO PARA MINIO (uploads de arquivos) ##
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.MultiPartParser',
+        'rest_framework.parsers.FormParser',
+    ),
 }
 
 SIMPLE_JWT = {
@@ -168,3 +176,31 @@ SIMPLE_JWT = {
 CORS_ALLOW_ALL_ORIGINS=True
 CORS_ALLOW_METHODS = ('DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT')
 CORS_ALLOW_HEADERS = ('*', )
+
+## ADICIONADO PARA MINIO ##
+AWS_ACCESS_KEY_ID = os.environ.get('MINIO_ACCESS_KEY')
+AWS_SECRET_ACCESS_KEY = os.environ.get('MINIO_SECRET_KEY')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('MINIO_BUCKET_NAME')
+AWS_S3_ENDPOINT_URL = os.environ.get('MINIO_ENDPOINT_URL')
+AWS_S3_REGION_NAME = 'us-east-1'
+AWS_S3_SIGNATURE_VERSION = 's3v4'
+AWS_QUERYSTRING_AUTH = False
+AWS_DEFAULT_ACL = 'public-read'
+
+# Define o armazenamento de arquivos padrão para usar o MinIO
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+# Opcional: Se você quiser servir seus arquivos estáticos também pelo MinIO em produção
+# STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage' # Ou S3Boto3Storage
+# Mas para desenvolvimento, é comum servir estáticos localmente.
+
+# Definições para DEBUG = False em produção (apenas para exemplo)
+# if not DEBUG:
+#     AWS_S3_CUSTOM_DOMAIN = 'your_minio_public_domain.com' # Se MinIO tiver um domínio público
+#     AWS_S3_OBJECT_PARAMETERS = {
+#         'CacheControl': 'max-age=86400', # Cache de 24 horas
+#     }
+#     AWS_LOCATION = 'static' # Prefixo para arquivos estáticos no bucket
+#     STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
+#     MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/' # Prefixo para arquivos de mídia no bucket
+#     MEDIA_ROOT = BASE_DIR / 'media' # Diretório local para mídia (não usado se DEFAULT_FILE_STORAGE é S3)
