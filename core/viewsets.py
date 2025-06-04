@@ -26,12 +26,6 @@ class UserViewSet(viewsets.ModelViewSet):
             return [AllowAny()]
         return [IsAuthenticated()]
 
-    def get_queryset(self):
-        if self.request.user.is_authenticated:
-            if self.request.user.is_superuser:  # Só admins podem ver todos os usuários
-                return AuthUser.objects.all()
-            return AuthUser.objects.filter(id=self.request.user.id)
-        return AuthUser.objects.none()
 
     def perform_create(self, serializer):
 
