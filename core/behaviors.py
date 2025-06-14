@@ -21,9 +21,15 @@ class MediaViewBehavior(BaseBehavior):
         self.bucket_name = os.environ.get('AWS_STORAGE_BUCKET_NAME')
         self.consultation_id = kwargs.get('consultation_id')
         self.file_obj = kwargs.get('file_obj')
+
+        self.user_created_by = kwargs.get('user_created_by', None)
+
         self.current_time = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
         self.file_extension = os.path.splitext(self.file_obj.name)[1]
-        self.file_key = f'consultation/{self.consultation_id}_{self.current_time}{self.file_extension}'
+        self.file_key = f'consultation/{self.consultation_id}_{self.current_time}_{os.urandom(4).hex()}{self.file_extension}'
+
+        print(
+            f"Behavior Init: consultation_id={self.consultation_id}, file_obj={self.file_obj.name if self.file_obj else 'NULO'}, user_created_by={self.user_created_by if hasattr(self, 'user_created_by') else 'NÃO PASSADO/DEFINIDO'}")
 
     @staticmethod
     def s3_client_init():
@@ -36,6 +42,8 @@ class MediaViewBehavior(BaseBehavior):
                             verify=False)
 
     def upload_media(self):
+        print(
+            f"Iniciando upload para MinIO. Bucket: {self.bucket_name}, Key: {self.file_key}, Content-Type: {self.file_obj.content_type}")
         try:
             self.s3_client.put_object(
                 Bucket=self.bucket_name,
@@ -45,7 +53,7 @@ class MediaViewBehavior(BaseBehavior):
             )
             return f"{self.s3_client.meta.endpoint_url}/{self.bucket_name}/{self.file_key}"
         except Exception as e:
-            raise exceptions.NotUploadMediaMinioException
+            raise exceptions.NotUploadMediaMinioException(f"Erro ao fazer upload para o Minio: {e}")
 
     def create_image_for_consultation(self):
         if self.consultation_id is None or not str(self.consultation_id).isdigit():
@@ -55,20 +63,32 @@ class MediaViewBehavior(BaseBehavior):
 
         try:
             consultation = models.Consultation.objects.get(id=consultation_id)
+            print(f"Consulta ID {consultation_id} encontrada: {consultation.date_consultation}")
         except models.Consultation.DoesNotExist:
+            print(f"Erro: Consulta com ID {self.consultation_id} NÃO encontrada.")
             raise ValueError(f"Consulta com ID {self.consultation_id} não encontrada.")
 
         url = self.upload_media()
+
+        print(
+            f"Tentando criar objeto FileImageSkin: filename={self.file_obj.name}, remote_name={url}, consultation={consultation.id}")
         models.FileImageSkin.objects.create(
             filename=self.file_obj.name,
             remote_name=url,
-            consultation=consultation
+            consultation=consultation,
         )
+        print("Registro FileImageSkin criado com sucesso.")
 
     def validate_file(self):
-        if not self.file_obj.name.endswith(tuple(self.valid_extensions)):
-            raise exceptions.InvalidFileException
+        print(f"Validando arquivo: {self.file_obj.name}, tamanho: {self.file_obj.size}")
+        if not self.file_obj.name.lower().endswith(tuple(self.valid_extensions)):
+            print("Validação de arquivo FALHOU: Extensão inválida.")
+            raise exceptions.InvalidFileException(
+                "Formato de arquivo inválido. Apenas .jpeg, .jpg, .png são permitidos.")
+        print("Validação de arquivo OK.")
 
     def run(self):
+        print("MediaViewBehavior.run() iniciado.")
         self.validate_file()
-        return self.create_image_for_consultation()
+        self.create_image_for_consultation()
+        print("MediaViewBehavior.run() concluído.")

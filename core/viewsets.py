@@ -9,7 +9,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import AuthUser
 
+from .behaviors import MediaViewBehavior
 from .models import Patient
+from .serializer_params import FileImageItemSerializerParam
 from .serializers import PatientSerializer
 
 from . import models, serializers
@@ -81,31 +83,49 @@ class ConsultationViewSet(viewsets.ModelViewSet):
         user = self.request.user
         serializer.save(agent=user)
 
-    @action(methods=['POST'], detail=False, parser_classes=[MultiPartParser, FormParser])
-    def upload_file(self, request, *args, **kwargs):
-        serializer = serializer_params.FileImageItemSerializerParam(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    @action(detail=False, methods=['post'], url_path='upload_file')
+    def upload_file(self, request):
 
+        serializer = FileImageItemSerializerParam(data=request.data)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            print(f"Erro na validação do serializer: {e}")
+            print(f"Erros detalhados do serializer: {serializer.errors}")
+            raise
+
+        file_obj = serializer.validated_data['file_obj']
         consultation_id = serializer.validated_data['consultation_id']
-        image_file = serializer.validated_data['file']
-        filename = serializer.validated_data.get('filename', image_file.name)
 
-        consultation = get_object_or_404(
-            models.Consultation,
-            id=consultation_id,
-            user_created_by=request.user
-        )
+        try:
+            media_behavior = MediaViewBehavior(
+                consultation_id=consultation_id,
+                file_obj=file_obj,
+                user_created_by=request.user
+            )
+            print("MediaViewBehavior instanciado. Rodando...")
+            media_behavior.run()
+            print("MediaViewBehavior executado com sucesso.")
 
-        user = request.user
-        behavior_response = behaviors.MediaViewBehavior().upload_image_for_consultation(
-            consultation=consultation,
-            image_file=image_file,
-            filename=filename,
-            user=user
-        )
+            return Response(
+                {'message': 'Imagem enviada e associada à consulta com sucesso!', 'consultation_id': consultation_id},
+                status=status.HTTP_201_CREATED
+            )
 
-        return Response(data=behavior_response, status=status.HTTP_201_CREATED)
-
+        except Exception as e:
+            print(f"Erro capturado no bloco try-except do viewset: {e}")
+            error_message = str(e)
+            if "not found" in error_message.lower():
+                print("Erro: Consulta não encontrada.")
+                return Response(
+                    {"detail": f"Erro: {error_message}"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            print("Erro inesperado no MediaViewBehavior ou lógica subsequente.")
+            return Response(
+                {"detail": f"Erro ao processar o upload da imagem: {error_message}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class AnalysisResultViewSet(viewsets.ModelViewSet):
     queryset = models.AnalysisResult.objects.all()
@@ -141,3 +161,4 @@ class FileImageSkinViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user_created_by=self.request.user)
+
