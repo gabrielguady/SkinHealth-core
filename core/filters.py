@@ -38,3 +38,8 @@ class ConsultationFilter(filterset.FilterSet):
         model = models.Consultation
         fields = ['agent', 'patient', 'date_consultation', 'notes']
 
+class AnalysisFilter(filterset.FilterSet):
+    result = filters.CharFilter(lookup_expr=choices.LIKE)
+    class Meta:
+        model = models.AnalysisResult
+        fields = ['result']

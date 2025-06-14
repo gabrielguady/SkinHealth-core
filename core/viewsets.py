@@ -1,21 +1,12 @@
-
+from django.shortcuts import get_object_or_404
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from django.shortcuts import get_object_or_404
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework import viewsets, status
-from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import AuthUser
-
-from .models import Patient
-from .serializers import PatientSerializer
-
-from . import models, serializers
-from . import serializer_params
-from . import behaviors
-
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.response import Response
+from core import models, behaviors, serializer_params, serializers, filters
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = models.User.objects.all()
@@ -33,12 +24,13 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class PatientViewSet(viewsets.ModelViewSet):
-    queryset = Patient.objects.all()
-    serializer_class = PatientSerializer
+    queryset = models.Patient.objects.all()
+    serializer_class = serializers.PatientSerializer
+    filterset_class = filters.PatientFilter
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Patient.objects.filter(user_created_by=self.request.user)
+        return models.Patient.objects.filter(user_created_by=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(user_created_by=self.request.user)
@@ -65,6 +57,7 @@ class PatientViewSet(viewsets.ModelViewSet):
 class ConsultationViewSet(viewsets.ModelViewSet):
     queryset = models.Consultation.objects.all()
     serializer_class = serializers.ConsultationSerializer
+    filterset_class = filters.ConsultationFilter
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -110,6 +103,7 @@ class ConsultationViewSet(viewsets.ModelViewSet):
 class AnalysisResultViewSet(viewsets.ModelViewSet):
     queryset = models.AnalysisResult.objects.all()
     serializer_class = serializers.AnalysisResultSerializer
+    filterset_class = filters.AnalysisFilter
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
