@@ -79,20 +79,31 @@ class ConsultationSerializer(serializers.ModelSerializer):
     patient_details = PatientSerializer(source='patient', read_only=True)
     agent = serializers.PrimaryKeyRelatedField(read_only=True)
 
+    file_image_urls = serializers.SerializerMethodField()
+
     class Meta:
         model = models.Consultation
         fields = '__all__'
+        extra_kwargs = {
+            'patient': {'write_only': True},
+        }
+
+    def get_file_image_urls(self, obj):
+        images = obj.fileimageskin_set.all()
+        return [image.remote_name for image in images]
+
 
 class FileImageSkinSerializer(serializers.ModelSerializer):
     image_url = serializers.ReadOnlyField(source='remote_name')
 
     class Meta:
         model = models.FileImageSkin
-        fields = '__all__'
+        fields = ['id', 'filename', 'image_url', 'remote_name']
         extra_kwargs = {
             'filename': {'read_only': True},
             'remote_name': {'read_only': True},
             'user_created_by': {'read_only': True},
+            'consultation': {'write_only': True}
         }
 
     def create(self, validated_data):

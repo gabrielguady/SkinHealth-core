@@ -80,8 +80,7 @@ class ConsultationViewSet(viewsets.ModelViewSet):
         return queryset.distinct()  
 
     def perform_create(self, serializer):
-        user = self.request.user
-        serializer.save(agent=user)
+        serializer.save(agent=self.request.user)
 
     @action(detail=False, methods=['post'], url_path='upload_file')
     def upload_file(self, request):
