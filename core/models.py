@@ -127,7 +127,7 @@ class FileImageSkin(ModelBase):
     )
     consultation = models.ForeignKey(
         Consultation,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         db_column='id_consultation',
     )
 
