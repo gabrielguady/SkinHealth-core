@@ -1,18 +1,32 @@
 services:
-  web:
-    build: .
-    image: api-skin
-    ports:
-      - "8000:8000"
-    environment:
-      DB_ENGINE: django.db.backends.postgresql_psycopg2
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: skin
-      DB_USER: postgres
-      DB_PASS: fpf2025
-    depends_on:
-      - db
+#  web:
+#    build: .
+#    image: api-skin
+#    ports:
+#      - "8000:8000"
+#    environment:
+#      DB_ENGINE: django.db.backends.postgresql_psycopg2
+#      DB_HOST: db
+#      DB_PORT: 5432
+#      DB_NAME: skin
+#      DB_USER: postgres
+#      DB_PASS: fpf2025
+#    depends_on:
+#      - db
+#  ai_service:
+#    build:
+#      context: .
+#      dockerfile: ai_service/Dockerfile
+#    volumes:
+#    - ./ai_service:/app
+#    ports:
+#      - "5000:5000"
+#    environment:
+#      PYTHONUNBUFFERED: 1
+#    depends_on:
+#    - minio-api
+#    networks:
+#    - app-network
 
   db:
     image: postgres:15
