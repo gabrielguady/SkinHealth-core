@@ -14,6 +14,22 @@ services:
 #    depends_on:
 #      - db
 
+#  ai_service:
+#    build:
+#      context: .
+#      dockerfile: ai_service/Dockerfile
+#    volumes:
+#    - ./ai_service:/app
+#    ports:
+#      - "5000:5000"
+#    environment:
+#      PYTHONUNBUFFERED: 1
+#    depends_on:
+#    - minio-api
+#    networks:
+#    - app-network
+
+
   db:
     image: postgres:15
     ports:
