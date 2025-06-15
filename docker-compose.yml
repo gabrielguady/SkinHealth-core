@@ -13,6 +13,7 @@ services:
 #      DB_PASS: fpf2025
 #    depends_on:
 #      - db
+
 #  ai_service:
 #    build:
 #      context: .
@@ -27,6 +28,7 @@ services:
 #    - minio-api
 #    networks:
 #    - app-network
+
 
   db:
     image: postgres:15

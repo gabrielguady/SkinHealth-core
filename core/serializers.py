@@ -79,50 +79,42 @@ class ConsultationSerializer(serializers.ModelSerializer):
     patient_details = PatientSerializer(source='patient', read_only=True)
     agent = serializers.PrimaryKeyRelatedField(read_only=True)
 
+    file_image_urls = serializers.SerializerMethodField()
+
     class Meta:
         model = models.Consultation
         fields = '__all__'
+        extra_kwargs = {
+            'patient': {'write_only': True},
+        }
+
+    def get_file_image_urls(self, obj):
+        images = obj.fileimageskin_set.all()
+        return [image.remote_name for image in images]
 
 
 class FileImageSkinSerializer(serializers.ModelSerializer):
-    image_file = serializers.FileField(write_only=True, required=False)
-    image_url = serializers.SerializerMethodField()
+    image_url = serializers.ReadOnlyField(source='remote_name')
 
     class Meta:
         model = models.FileImageSkin
-        fields = '__all__'
+        fields = ['id', 'filename', 'image_url', 'remote_name']
         extra_kwargs = {
+            'filename': {'read_only': True},
+            'remote_name': {'read_only': True},
+            'user_created_by': {'read_only': True},
             'consultation': {'write_only': True}
         }
 
-    def get_image_url(self, obj):
-        if obj.image_file and obj.image_file.url:
-            return obj.image_file.url
-        return None
-
     def create(self, validated_data):
-        image_file = validated_data.pop('image_file', None)
-        consultation = validated_data.pop('consultation')
         request = self.context.get('request')
-
-        file_image_skin = models.FileImageSkin.objects.create(
-            consultation=consultation,
-            user_created_by=request.user if request else None,
+        instance = models.FileImageSkin.objects.create(
+            user_created_by=request.user if request and request.user.is_authenticated else None,
             **validated_data
         )
-
-        if image_file:
-            file_image_skin.image_file.save(image_file.name, image_file)
-            file_image_skin.remote_name = file_image_skin.image_file.name
-            file_image_skin.save()
-
-        return file_image_skin
+        return instance
 
     def update(self, instance, validated_data):
-        image_file = validated_data.pop('image_file', None)
-        if image_file:
-            instance.image_file.save(image_file.name, image_file)
-            instance.remote_name = instance.image_file.name
         return super().update(instance, validated_data)
 
 
