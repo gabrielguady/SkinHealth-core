@@ -92,12 +92,9 @@ class ConsultationSerializer(serializers.ModelSerializer):
         return PatientSerializer(obj.patient).data
 
     def get_images_with_analysis(self, obj):
-        # Puxa todos os FileImageSkin associados a esta consulta
         file_images = obj.fileimageskin_set.all()
         results = []
         for img in file_images:
-            # Serializa cada FileImageSkin usando FileImageSkinSerializer.
-            # O FileImageSkinSerializer já inclui o 'analysis_result' usando get_analysis_result.
             img_data = FileImageSkinSerializer(img, context=self.context).data
             results.append(img_data)
         return results
@@ -108,11 +105,8 @@ class ConsultationSerializer(serializers.ModelSerializer):
 
 class FileImageSkinSerializer(serializers.ModelSerializer):
     image_url = serializers.ReadOnlyField(source='remote_name')
-
     analysis_result = serializers.SerializerMethodField()
-
-    # CORREÇÃO: Defina user_created_by explicitamente como PrimaryKeyRelatedField
-    user_created_by = serializers.PrimaryKeyRelatedField(read_only=True) # <--- MUDANÇA AQUI
+    user_created_by = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = models.FileImageSkin
@@ -121,7 +115,6 @@ class FileImageSkinSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'filename': {'read_only': True},
             'remote_name': {'read_only': True},
-            # REMOVIDO: 'user_created_by': {'read_only': True} de extra_kwargs, pois agora é definido explicitamente
             'consultation': {'write_only': True}
         }
 
@@ -142,7 +135,6 @@ class FileImageSkinSerializer(serializers.ModelSerializer):
 
 
 class AnalysisResultSerializer(serializers.ModelSerializer):
-    # image_details = FileImageSkinSerializer(source='image', read_only=True)
     user_created_by = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:

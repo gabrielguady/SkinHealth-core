@@ -96,8 +96,7 @@ class MediaViewBehavior(BaseBehavior):
             filename=self.file_obj.name,
             remote_name=url,
             consultation=consultation,
-            # user_created_by=self.user_created_by, # <--- ESTA LINHA DEVE ESTAR REMOVIDA OU COMENTADA!
-            # É ela que causa o erro 'unexpected keyword argument'.
+
         )
         print("Novo registro FileImageSkin criado com sucesso.")
         return file_image_instance

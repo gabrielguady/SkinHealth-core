@@ -14,10 +14,9 @@ from .serializer_params import FileImageItemSerializerParam
 from .serializers import PatientSerializer
 import json
 from . import models, serializers
-import requests # <--- CORREÇÃO AQUI: Importe requests
-from requests.exceptions import RequestException, Timeout # <--- CORREÇÃO AQUI: Importe as exceções específicas
+import requests
 
-AI_SERVICE_URL = os.environ.get('AI_SERVICE_URL', 'http://192.168.1.4:5000/predict') # Ou o IP do seu Flask/IA
+AI_SERVICE_URL = os.environ.get('AI_SERVICE_URL', 'http://192.168.1.4:5000/predict')
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -95,7 +94,6 @@ class ConsultationViewSet(viewsets.ModelViewSet):
         except Exception as e:
             print(f"Erro na validação do serializer: {e}")
             print(f"Erros detalhados do serializer: {serializer.errors}")
-            # Retorna um 400 Bad Request com erros de validação
             return Response(
                 {"detail": "Erro na validação dos dados de upload.", "errors": serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST
@@ -105,7 +103,7 @@ class ConsultationViewSet(viewsets.ModelViewSet):
         consultation_id = serializer.validated_data['consultation_id']
 
         file_image_instance = None
-        analysis_result_data = None  # Para armazenar os dados da análise da IA para a resposta
+        analysis_result_data = None
 
         try:
             # 1. Upload da imagem para o MinIO e criação do registro FileImageSkin
@@ -124,9 +122,9 @@ class ConsultationViewSet(viewsets.ModelViewSet):
                 ai_response = requests.post(
                     AI_SERVICE_URL,
                     json={'image_url': file_image_instance.remote_name},
-                    timeout=60  # Timeout para a requisição de IA
+                    timeout=60
                 )
-                ai_response.raise_for_status()  # Levanta um erro para status HTTP 4xx/5xx
+                ai_response.raise_for_status()
 
                 ai_data = ai_response.json()
                 if ai_data.get('status') == 'success':
@@ -138,10 +136,10 @@ class ConsultationViewSet(viewsets.ModelViewSet):
 
                     # 3. Criar um registro AnalysisResult no banco de dados
                     models.AnalysisResult.objects.create(
-                        image=file_image_instance,  # Associa ao FileImageSkin recém-criado
+                        image=file_image_instance,
                         result=prediction_text,
                         confidence=prediction_confidence,
-                        model_version=model_version # Associa o usuário ao resultado da análise
+                        model_version=model_version
                     )
                     print("Registro AnalysisResult criado com sucesso.")
 
@@ -173,17 +171,14 @@ class ConsultationViewSet(viewsets.ModelViewSet):
             file_image_serializer = serializers.FileImageSkinSerializer(file_image_instance,
                                                                         context={'request': request})
             response_data = file_image_serializer.data  # Pega os dados do FileImageSkin
-
-            # Adiciona os dados da análise ao dicionário de resposta do FileImageSkin
-            # O frontend espera um campo 'analysis_result' no UploadImageResponse
             response_data['analysis_result'] = analysis_result_data
 
             return Response(
-                response_data,  # Retorna o FileImageSkin serializado com o resultado da análise
+                response_data,
                 status=status.HTTP_201_CREATED
             )
 
-        except Exception as e:  # Este é o try-except principal do @action
+        except Exception as e:
             print(f"Erro capturado no bloco try-except principal do viewset: {e}")
             error_message = str(e)
             if "not found" in error_message.lower():
