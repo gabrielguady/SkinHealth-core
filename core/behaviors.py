@@ -45,6 +45,8 @@ class MediaViewBehavior(BaseBehavior):
         print(
             f"Iniciando upload para MinIO. Bucket: {self.bucket_name}, Key: {self.file_key}, Content-Type: {self.file_obj.content_type}")
         try:
+            self.file_obj.seek(0)
+
             self.s3_client.put_object(
                 Bucket=self.bucket_name,
                 Key=self.file_key,
@@ -53,6 +55,7 @@ class MediaViewBehavior(BaseBehavior):
             )
             return f"{self.s3_client.meta.endpoint_url}/{self.bucket_name}/{self.file_key}"
         except Exception as e:
+            print(f"Erro no upload para MinIO: {e}")
             raise exceptions.NotUploadMediaMinioException(f"Erro ao fazer upload para o Minio: {e}")
 
     def _delete_file_from_minio(self, remote_name):
@@ -76,7 +79,6 @@ class MediaViewBehavior(BaseBehavior):
             print(f"Erro: Consulta com ID {self.consultation_id} NÃO encontrada.")
             raise ValueError(f"Consulta com ID {self.consultation_id} não encontrada.")
 
-        # Lógica para substituir a imagem existente
         existing_images = models.FileImageSkin.objects.filter(consultation=consultation)
         if existing_images.exists():
             print(
@@ -90,12 +92,15 @@ class MediaViewBehavior(BaseBehavior):
 
         print(
             f"Tentando criar objeto FileImageSkin: filename={self.file_obj.name}, remote_name={url}, consultation={consultation.id}")
-        models.FileImageSkin.objects.create(
+        file_image_instance = models.FileImageSkin.objects.create(
             filename=self.file_obj.name,
             remote_name=url,
             consultation=consultation,
+            # user_created_by=self.user_created_by, # <--- ESTA LINHA DEVE ESTAR REMOVIDA OU COMENTADA!
+            # É ela que causa o erro 'unexpected keyword argument'.
         )
         print("Novo registro FileImageSkin criado com sucesso.")
+        return file_image_instance
 
     def validate_file(self):
         print(f"Validando arquivo: {self.file_obj.name}, tamanho: {self.file_obj.size}")
@@ -108,5 +113,6 @@ class MediaViewBehavior(BaseBehavior):
     def run(self):
         print("MediaViewBehavior.run() iniciado.")
         self.validate_file()
-        self.create_image_for_consultation()
+        created_instance = self.create_image_for_consultation()
         print("MediaViewBehavior.run() concluído.")
+        return created_instance

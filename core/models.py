@@ -138,7 +138,7 @@ class FileImageSkin(ModelBase):
 class AnalysisResult(ModelBase):
     image = models.ForeignKey(
         FileImageSkin,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         db_column='id_image',
     )
     result = models.CharField(
@@ -148,7 +148,7 @@ class AnalysisResult(ModelBase):
     confidence = models.FloatField()
     model_version = models.CharField(
         db_column='tx_model_version',
-        max_length=20,
+        max_length=50,
         default='v1'
     )
     class Meta:

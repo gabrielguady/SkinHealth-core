@@ -79,7 +79,7 @@ class ConsultationSerializer(serializers.ModelSerializer):
     patient_details = PatientSerializer(source='patient', read_only=True)
     agent = serializers.PrimaryKeyRelatedField(read_only=True)
 
-    file_image_urls = serializers.SerializerMethodField()
+    images_with_analysis = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Consultation
@@ -88,38 +88,61 @@ class ConsultationSerializer(serializers.ModelSerializer):
             'patient': {'write_only': True},
         }
 
-    def get_file_image_urls(self, obj):
-        images = obj.fileimageskin_set.all()
-        return [image.remote_name for image in images]
+    def get_patient_details(self, obj):
+        return PatientSerializer(obj.patient).data
 
-
-class FileImageSkinSerializer(serializers.ModelSerializer):
-    image_url = serializers.ReadOnlyField(source='remote_name')
-
-    class Meta:
-        model = models.FileImageSkin
-        fields = ['id', 'filename', 'image_url', 'remote_name']
-        extra_kwargs = {
-            'filename': {'read_only': True},
-            'remote_name': {'read_only': True},
-            'user_created_by': {'read_only': True},
-            'consultation': {'write_only': True}
-        }
-
-    def create(self, validated_data):
-        request = self.context.get('request')
-        instance = models.FileImageSkin.objects.create(
-            user_created_by=request.user if request and request.user.is_authenticated else None,
-            **validated_data
-        )
-        return instance
+    def get_images_with_analysis(self, obj):
+        # Puxa todos os FileImageSkin associados a esta consulta
+        file_images = obj.fileimageskin_set.all()
+        results = []
+        for img in file_images:
+            # Serializa cada FileImageSkin usando FileImageSkinSerializer.
+            # O FileImageSkinSerializer já inclui o 'analysis_result' usando get_analysis_result.
+            img_data = FileImageSkinSerializer(img, context=self.context).data
+            results.append(img_data)
+        return results
 
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
 
 
+class FileImageSkinSerializer(serializers.ModelSerializer):
+    image_url = serializers.ReadOnlyField(source='remote_name')
+
+    analysis_result = serializers.SerializerMethodField()
+
+    # CORREÇÃO: Defina user_created_by explicitamente como PrimaryKeyRelatedField
+    user_created_by = serializers.PrimaryKeyRelatedField(read_only=True) # <--- MUDANÇA AQUI
+
+    class Meta:
+        model = models.FileImageSkin
+        # Liste todos os campos que você quer incluir explicitamente
+        fields = '__all__'
+        extra_kwargs = {
+            'filename': {'read_only': True},
+            'remote_name': {'read_only': True},
+            # REMOVIDO: 'user_created_by': {'read_only': True} de extra_kwargs, pois agora é definido explicitamente
+            'consultation': {'write_only': True}
+        }
+
+    def get_analysis_result(self, obj):
+        try:
+            analysis = models.AnalysisResult.objects.get(image=obj)
+            return {
+                'id': analysis.id,
+                'result': analysis.result,
+                'confidence': analysis.confidence,
+                'model_version': analysis.model_version
+            }
+        except models.AnalysisResult.DoesNotExist:
+            return None
+        except Exception as e:
+            print(f"Erro ao obter analysis_result para FileImageSkin {obj.id}: {e}")
+            return {"error": str(e)}
+
+
 class AnalysisResultSerializer(serializers.ModelSerializer):
-    image_details = FileImageSkinSerializer(source='image', read_only=True)
+    # image_details = FileImageSkinSerializer(source='image', read_only=True)
     user_created_by = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
