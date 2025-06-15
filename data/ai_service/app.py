@@ -4,9 +4,11 @@ from flask import Flask, request, jsonify
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
-import io # Usar 'io' em vez de 'BytesIO' diretamente para consistência, mas BytesIO também funciona
+import io
 import os
 import requests
+import torch.nn as nn
+from timm import create_model
 
 # Importe a classe do modelo CustomEfficientNet
 from model_architecture import CustomEfficientNet
@@ -14,44 +16,68 @@ from model_architecture import CustomEfficientNet
 app = Flask(__name__)
 
 # --- Configurações do Modelo de CLASSIFICAÇÃO ---
-# CORREÇÃO 1: Caminho para o SEU arquivo de modelo treinado
-CLASSIFIER_MODEL_PATH = 'models/tf_efficientnet_b0_aa-827b6e33.pth'
+CLASSIFIER_MODEL_PATH = 'models/my_lesion_classifier_trained_v1.pth'
 CLASSIFIER_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 classifier_model = None
 
-# CORREÇÃO 2: Número de classes deve ser 3, como o seu modelo foi treinado
 NUM_CLASSES = 3
-
-# CORREÇÃO 3: As classes na ordem correta, como ImageFolder as detectou
 CLASSIFIER_CLASS_NAMES = ['melanoma', 'nevus', 'seborrheic_keratosis']
 
 try:
-    # Cria uma instância do seu CustomEfficientNet com o número correto de classes
+    print(f"Tentando carregar modelo: {CLASSIFIER_MODEL_PATH}")
+
+    # 1. Cria uma instância do seu CustomEfficientNet com o número correto de classes (3).
     classifier_model = CustomEfficientNet(num_classes=NUM_CLASSES)
 
-    # Carrega o state_dict do seu modelo JÁ TREINADO
-    # Não precisamos do remapeamento complexo aqui, pois o .pth já está no formato correto
-    classifier_model.load_state_dict(torch.load(CLASSIFIER_MODEL_PATH, map_location=CLASSIFIER_DEVICE))
+    # 2. Carrega o state_dict do arquivo .pth (que tem 1000 classes).
+    state_dict = torch.load(CLASSIFIER_MODEL_PATH, map_location=CLASSIFIER_DEVICE)
 
-    classifier_model.eval() # Coloca o modelo em modo de avaliação
+    # 3. NOVO E CRÍTICO: REMAPEAMENTO E FILTRAGEM DAS CHAVES
+    # Este passo é para:
+    # a) Adicionar o prefixo 'base_model.' esperado pelo seu CustomEfficientNet.
+    # b) FILTRAR as chaves da camada 'classifier' que têm incompatibilidade de tamanho.
+    corrected_state_dict = {}
+    for k, v in state_dict.items():
+        # Adiciona 'base_model.' como prefixo a todas as chaves
+        prefixed_key = f'base_model.{k}'
+
+        # EXCLUI as chaves da camada final de classificação (classifier)
+        # Se você está adaptando um modelo pré-treinado, essa camada será diferente.
+        if "classifier" in k:  # CUIDADO: Isso pode ser muito amplo. Melhor: if k == "classifier.weight" or k == "classifier.bias"
+            print(f"Pulando chave do classificador: {k} (pois o modelo tem {NUM_CLASSES} classes)")
+            continue
+
+        corrected_state_dict[prefixed_key] = v
+
+    # 4. Carrega o state_dict corrigido e filtrado no seu modelo.
+    # strict=False é importante para ignorar chaves que não existem (se houver, e agora as do classifier que pulamos)
+    # e para permitir que o PyTorch não se preocupe com elas.
+    classifier_model.load_state_dict(corrected_state_dict, strict=False)
+
+    classifier_model.eval()  # Coloca o modelo em modo de avaliação
     classifier_model.to(CLASSIFIER_DEVICE)
-    print(f"Modelo Classificador '{CLASSIFIER_MODEL_PATH}' carregado no dispositivo: {CLASSIFIER_DEVICE}")
+    print(
+        f"Modelo Classificador '{CLASSIFIER_MODEL_PATH}' (com cabeça de {NUM_CLASSES} classes) carregado no dispositivo: {CLASSIFIER_DEVICE}")
+
 except Exception as e:
     print(f"Erro ao carregar o modelo Classificador: {e}")
     import traceback
-    traceback.print_exc() # Isso imprime a pilha de chamadas para depuração
-    classifier_model = None # Garante que o modelo é None se houver falha no carregamento
 
-# --- Transformações da Imagem para o Classificador (DEVE SER IGUAL À VALIDAÇÃO/TESTE) ---
+    traceback.print_exc()  # Imprime a pilha de chamadas para depuração
+    classifier_model = None  # Garante que o modelo é None se houver falha no carregamento
+
+# --- Transformações da Imagem ---
 classifier_transforms = transforms.Compose([
-    transforms.Resize((224, 224)), # Tamanho de entrada esperado pelo EfficientNet_B0
+    transforms.Resize((224, 224)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
+
 @app.route('/')
 def home():
     return "API de Inferência de IA (Classificação de Lesões) está funcionando!"
+
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -67,23 +93,22 @@ def predict():
 
     try:
         response = requests.get(image_url)
-        response.raise_for_status() # Levanta um erro para códigos de status HTTP 4xx/5xx
+        response.raise_for_status()
 
-        # Usar io.BytesIO para ler os bytes como um arquivo
         img_pil = Image.open(io.BytesIO(response.content)).convert('RGB')
 
-        input_tensor_classifier = classifier_transforms(img_pil).unsqueeze(0) # Adiciona dimensão do batch
+        input_tensor_classifier = classifier_transforms(img_pil).unsqueeze(0)
 
-        with torch.no_grad(): # Desativa o cálculo de gradientes para otimizar a inferência
+        with torch.no_grad():
             classifier_output = classifier_model(input_tensor_classifier.to(CLASSIFIER_DEVICE))
-            classifier_probabilities = torch.nn.functional.softmax(classifier_output, dim=1)[0] # [0] para pegar o primeiro item do batch
+            classifier_probabilities = torch.nn.functional.softmax(classifier_output, dim=1)[0]
             predicted_class_idx = torch.argmax(classifier_probabilities).item()
             classifier_confidence = round(classifier_probabilities[predicted_class_idx].item(), 4)
             classifier_result_text = CLASSIFIER_CLASS_NAMES[predicted_class_idx]
 
         return jsonify({
             "status": "success",
-            "prediction": classifier_result_text, # Mudei 'result' para 'prediction' para clareza
+            "prediction": classifier_result_text,
             "confidence": classifier_confidence,
             "model_version": "efficientnet_classifier_v1.0"
         }), 200
@@ -98,7 +123,6 @@ def predict():
         print(f"Erro inesperado durante a predição: {e}")
         return jsonify({"error": f"Erro interno do servidor de IA: {str(e)}"}), 500
 
+
 if __name__ == '__main__':
-    # Certifique-se de que Flask está instalado: pip install Flask
-    # Para desenvolvimento, debug=True é útil. Para produção, defina como False.
     app.run(host='0.0.0.0', port=5000, debug=True)
