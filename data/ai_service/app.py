@@ -15,7 +15,7 @@ app = Flask(__name__)
 
 # --- Configurações do Modelo de CLASSIFICAÇÃO ---
 # CORREÇÃO 1: Caminho para o SEU arquivo de modelo treinado
-CLASSIFIER_MODEL_PATH = 'models/my_lesion_classifier_trained_v1.pth'
+CLASSIFIER_MODEL_PATH = 'models/tf_efficientnet_b0_aa-827b6e33.pth'
 CLASSIFIER_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 classifier_model = None
 
