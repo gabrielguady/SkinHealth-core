@@ -16,7 +16,7 @@ import json
 from . import models, serializers
 import requests
 
-AI_SERVICE_URL = os.environ.get('AI_SERVICE_URL', 'http://192.168.1.4:5000/predict')
+AI_SERVICE_URL = os.environ.get('AI_SERVICE_URL', 'http://localhost:5000/predict')
 
 
 class UserViewSet(viewsets.ModelViewSet):

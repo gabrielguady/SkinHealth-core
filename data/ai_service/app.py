@@ -1,11 +1,12 @@
 # C:\Users\Obeller\PycharmProjects\SkinHealth-core\data\ai_service\app.py
 
-from flask import Flask, request, jsonify
+import io
+
+import requests
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
-import io
-import requests
+from flask import Flask, request, jsonify
 
 from model_architecture import CustomEfficientNet
 
